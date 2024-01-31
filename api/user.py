@@ -31,6 +31,7 @@ class UserAPI:
             # look for password and dob
             password = body.get('password')
             dob = body.get('dob')
+            color = body.get('color')
 
             ''' #1: Key code block, setup USER OBJECT '''
             uo = User(name=name, 
@@ -74,48 +75,56 @@ class UserAPI:
                     }, 400
                 ''' Get Data '''
                 uid = body.get('uid')
+
                 if uid is None:
                     return {'message': f'User ID is missing'}, 400
                 password = body.get('password')
-                
+
                 ''' Find user '''
                 user = User.query.filter_by(_uid=uid).first()
                 if user is None or not user.is_password(password):
                     return {'message': f"Invalid user id or password"}, 400
+
                 if user:
+                    print("GOT USER")
                     try:
                         token = jwt.encode(
                             {"_uid": user._uid},
                             current_app.config["SECRET_KEY"],
                             algorithm="HS256"
                         )
+                        print("after token")
                         resp = Response("Authentication for %s successful" % (user._uid))
+                        print(f"after response: {token}")
                         resp.set_cookie("jwt", token,
                                 max_age=3600,
                                 secure=True,
                                 httponly=True,
                                 path='/',
-                                samesite='None'  # This is the key part for cross-site requests
-
-                                # domain="frontend.com"
+                                samesite='None',  # This is the key part for cross-site requests
+                                # domain="0.0.0.0"
                                 )
+                        print(f"after set_cookie: resp={resp}")
+                        print(f"after set_cookie: resp.headers={resp.headers}")
+                        # print(dir(resp))
                         return resp
                     except Exception as e:
                         return {
                             "error": "Something went wrong",
                             "message": str(e)
-                        }, 500
+                        }, 501
                 return {
                     "message": "Error fetching auth token!",
                     "data": None,
                     "error": "Unauthorized"
                 }, 404
             except Exception as e:
+                print(f"Got exception: {e}")
                 return {
                         "message": "Something went wrong!",
                         "error": str(e),
                         "data": None
-                }, 500
+                }, 502
 
             
     # building RESTapi endpoint

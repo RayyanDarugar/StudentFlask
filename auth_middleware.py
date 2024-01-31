@@ -9,12 +9,16 @@ def token_required(f):
     def decorated(*args, **kwargs):
         token = request.cookies.get("jwt")
         if not token:
+            print("NO TOKEN")
+            # return f("toby", *args, **kwargs)     # WORK AROUND - Todo
+
             return {
                 "message": "Authentication Token is missing!",
                 "data": None,
                 "error": "Unauthorized"
             }, 401
         try:
+            print("HERE")
             data=jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
             current_user=User.query.filter_by(_uid=data["_uid"]).first()
             if current_user is None:
@@ -24,6 +28,7 @@ def token_required(f):
                 "error": "Unauthorized"
             }, 401
         except Exception as e:
+            print(f"EXCEPTION: {e}")
             return {
                 "message": "Something went wrong",
                 "data": None,
