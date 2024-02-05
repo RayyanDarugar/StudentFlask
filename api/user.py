@@ -14,16 +14,18 @@ api = Api(user_api)
 
 class UserAPI:        
     class _CRUD(Resource):  # User API operation for Create, Read.  THe Update, Delete methods need to be implemeented
-        @token_required
-        def post(self, current_user): # Create method
+
+        def post(self): # Create method
             ''' Read data for json body '''
             body = request.get_json()
-            
+
             ''' Avoid garbage in, error checking '''
             # validate name
             name = body.get('name')
+
             if name is None or len(name) < 2:
                 return {'message': f'Name is missing, or is less than 2 characters'}, 400
+
             # validate uid
             uid = body.get('uid')
             if uid is None or len(uid) < 2:
@@ -46,9 +48,10 @@ class UserAPI:
                 try:
                     uo.dob = datetime.strptime(dob, '%Y-%m-%d').date()
                 except:
-                    return {'message': f'Date of birth format error {dob}, must be mm-dd-yyyy'}, 400
+                    return {'message': f'Date of birth format error {dob}, must be yyy-mm-dd'}, 400
             
             ''' #2: Key Code block to add user to database '''
+
             # create user in database
             user = uo.create()
             # success returns json of user
@@ -57,12 +60,22 @@ class UserAPI:
             # failure returns error
             return {'message': f'Processed {name}, either a format error or User ID {uid} is duplicate'}, 400
 
-        @token_required
+        @token_required(roles=[])
         def get(self, current_user): # Read Method
             users = User.query.all()    # read/extract all users from database
             json_ready = [user.read() for user in users]  # prepare output in json
             return jsonify(json_ready)  # jsonify creates Flask response object, more specific to APIs than json.dumps
     
+        @token_required(roles=["Admin"])
+        def delete(self, current_user):
+            body = request.get_json()
+            uid = body.get('uid')
+            users = User.query.all()
+            for user in users:
+                if user.uid == uid:
+                    user.delete()
+            return jsonify(user.read())
+        
     class _Security(Resource):
         def post(self):
             try:
@@ -88,8 +101,13 @@ class UserAPI:
                 if user:
                     print("GOT USER")
                     try:
+                        token_payload = {
+                            "_uid": user._uid,
+                            "role": user._role  # Add the role information to the token
+                        }
+                        print(f"token_payload={token_payload}")
                         token = jwt.encode(
-                            {"_uid": user._uid},
+                            token_payload,
                             current_app.config["SECRET_KEY"],
                             algorithm="HS256"
                         )
@@ -126,42 +144,6 @@ class UserAPI:
                         "data": None
                 }, 502
 
-    class _Signup(Resource):
-        def post(self):
-            try:
-                body = request.get_json()
-                # Validate the required fields for signup
-                required_fields = ['name', 'uid', 'password', 'dob', 'color']
-                for field in required_fields:
-                    if field not in body:
-                        return {'message': f'{field} is missing'}, 400
-
-                # Your existing code for validating and creating a user goes here
-                
-                # Create a User object
-                user = User(
-                    name=body['name'],
-                    uid=body['uid'],
-                    password=body['password'],
-                    dob=body['dob'],
-                    color=body['color']
-                )
-                
-                created_user = user.create()
-                
-                if created_user:
-                    return jsonify(created_user.read()), 201
-                else:
-                    return {'message': f'Error creating user. User ID {body["uid"]} may be duplicate'}, 400
-
-            except Exception as e:
-                return {
-                    "message": "Something went wrong!",
-                    "error": str(e),
-                    "data": None
-                }, 502
-
     # building RESTapi endpoint
     api.add_resource(_CRUD, '/')
     api.add_resource(_Security, '/authenticate')
-    api.add_resource(_Signup, '/signup')

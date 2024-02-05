@@ -4,8 +4,8 @@ from flask import request, abort
 from flask import current_app
 from model.users import User
 
-def token_required(roles=None):
-    def decorator(f):
+def token_required(f, roles=None):
+    # def decorator(f):
         @wraps(f)
         def decorated(*args, **kwargs):
             # print("TOPOOPOP")
@@ -52,4 +52,4 @@ def token_required(roles=None):
             return f(current_user, *args, **kwargs)
 
         return decorated
-    return decorator
+    # return decorator
