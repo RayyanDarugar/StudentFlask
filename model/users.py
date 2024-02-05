@@ -206,7 +206,7 @@ class User(db.Model):
 
     # CRUD update: updates user name, password, phone
     # returns self
-    def update(self, name="", uid="", password=""):
+    def update(self, name="", uid="", password="", role=""):
         """only updates values with length"""
         if len(name) > 0:
             self.name = name
@@ -214,6 +214,8 @@ class User(db.Model):
             self.uid = uid
         if len(password) > 0:
             self.set_password(password)
+        if role == "Admin" or "User":
+            self.role = role
         db.session.commit()
         return self
 

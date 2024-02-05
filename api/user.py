@@ -76,6 +76,19 @@ class UserAPI:
                     user.delete()
             return jsonify(user.read())
         
+        @token_required(roles=["Admin"])
+        def put(self, current_user):
+            body = request.get_json() # get the body of the request
+            uid = body.get('uid') # get the UID (Know what to reference)
+            name = body.get('name') # get name (to change)
+            password = body.get('password') # get password (to change)
+            role = body.get('role')  # get role (to change)
+            users = User.query.all() # get users
+            for user in users:
+                if user.uid == uid: # find user with matching uid
+                    user.update(name,'',password,role) # update info
+            return f"{user.read()} Updated"
+        
     class _Security(Resource):
         def post(self):
             try:
