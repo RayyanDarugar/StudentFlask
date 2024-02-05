@@ -126,8 +126,42 @@ class UserAPI:
                         "data": None
                 }, 502
 
-            
+    class _Signup(Resource):
+        def post(self):
+            try:
+                body = request.get_json()
+                # Validate the required fields for signup
+                required_fields = ['name', 'uid', 'password', 'dob', 'color']
+                for field in required_fields:
+                    if field not in body:
+                        return {'message': f'{field} is missing'}, 400
+
+                # Your existing code for validating and creating a user goes here
+                
+                # Create a User object
+                user = User(
+                    name=body['name'],
+                    uid=body['uid'],
+                    password=body['password'],
+                    dob=body['dob'],
+                    color=body['color']
+                )
+                
+                created_user = user.create()
+                
+                if created_user:
+                    return jsonify(created_user.read()), 201
+                else:
+                    return {'message': f'Error creating user. User ID {body["uid"]} may be duplicate'}, 400
+
+            except Exception as e:
+                return {
+                    "message": "Something went wrong!",
+                    "error": str(e),
+                    "data": None
+                }, 502
+
     # building RESTapi endpoint
     api.add_resource(_CRUD, '/')
     api.add_resource(_Security, '/authenticate')
-    
+    api.add_resource(_Signup, '/signup')
