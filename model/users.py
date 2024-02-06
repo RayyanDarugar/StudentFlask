@@ -206,10 +206,12 @@ class User(db.Model):
 
     # CRUD update: updates user name, password, phone
     # returns self
-    def update(self, name="", uid="", password="", role=""):
+    def update(self, name="", uid="", password="", color="", role=""):
         """only updates values with length"""
         if len(name) > 0:
             self.name = name
+        if len(color) > 0:
+            self.color = color
         if len(uid) > 0:
             self.uid = uid
         if len(password) > 0:
